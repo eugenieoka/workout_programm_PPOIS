@@ -1,0 +1,32 @@
+# Prerendered files
+*.exe
+*.out
+*.app
+
+# Object files
+*.o
+*.obj
+
+# Libraries
+*.lib
+*.a
+*.so
+*.dll
+
+# Debug files
+*.dSYM/
+*.su
+*.idb
+*.pdb
+
+# IDE
+.vscode/
+.idea/
+*.swp
+.DS_Store
+
+# Build folders
+build/
+bin/
+obj/
+cmake-build-*/
