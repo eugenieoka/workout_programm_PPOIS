@@ -262,6 +262,9 @@ public:
     /** @throw std::runtime_error on parse/validation error. */
     static UserProfile fromJson(const std::string& json);
 
+    // Database
+    [[nodiscard]] const std::map<ExerciseId, double>& getEstimated1RM() const noexcept { return estimated1RM_; }
+
 private:
     int64_t id_ = -1;
     std::string name_;
