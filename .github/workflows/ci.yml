@@ -1,0 +1,32 @@
+name: CI 
+
+on:
+  push:
+    branches: [ "main" ] 
+  pull_request:
+    branches: [ "main" ]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Install dependencies (SQLite3)
+      # Устанавливаем библиотеки, которые нужны для работы с БД
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y libsqlite3-dev
+
+    - name: Configure CMake
+      # Создаем папку build и генерируем файлы сборки
+      run: cmake -B ${{github.workspace}}/build -DCMAKE_BUILD_TYPE=Release
+
+    - name: Build
+      # Собираем проект
+      run: cmake --build ${{github.workspace}}/build --config Release
+
+    - name: Run Tests
+      run: echo "Сборка прошла успешно. Тесты пока не настроены."
