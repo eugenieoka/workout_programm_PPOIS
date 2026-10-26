@@ -219,7 +219,7 @@ private:
     std::optional<ExerciseId> regressionId_;
     std::optional<ExerciseId> progressionId_;
 
-    Exercise(/* all fields */);
+    explicit Exercise(const ExerciseData& data);
 };
 
 }

@@ -1,6 +1,7 @@
 #pragma once
 
 #include <string>
+#include <string_view>
 #include <vector>
 #include <optional>
 #include <chrono>
@@ -68,14 +69,11 @@ struct BodyMetrics {
     double tdeeKcal          = 0.0;
     double ffmi              = 0.0;
 
-    std::map<ExerciseId, double> estimated1RM;
-
     [[nodiscard]] bool isValid() const noexcept {
-        constexpr double EPS = 1e-9;
         return heightCm > 50.0 && heightCm < 250.0 &&
                weightKg > 20.0 && weightKg < 300.0 &&
                ageYears >= 13 && ageYears <= 100 &&
-               (bodyFatPct < -0.5 || (bodyFatPct >= 3.0 && bodyFatPct <= 50.0)) &&
+               (bodyFatPct == -1.0 || (bodyFatPct >= 3.0 && bodyFatPct <= 50.0)) &&
                trainingAgeMonths >= 0;
     }
 
