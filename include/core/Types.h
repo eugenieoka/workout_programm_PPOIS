@@ -9,7 +9,7 @@ using UserId     = int64_t;
 using PlanId     = int64_t;
 using SessionId  = int64_t;
 
-// Equipment — bitmask (shared between UserConstraints & Exercise)
+// Equipment - bitmask (shared between UserConstraints & Exercise)
 
 enum class Equipment : uint16_t {
     None            = 0,
