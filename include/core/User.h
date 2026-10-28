@@ -74,7 +74,7 @@ struct BodyMetrics {
                weightKg > 20.0 && weightKg < 300.0 &&
                ageYears >= 13 && ageYears <= 100 &&
                (bodyFatPct == -1.0 || (bodyFatPct >= 3.0 && bodyFatPct <= 50.0)) &&
-               trainingAgeMonths >= 0;
+               trainingAgeMonths >= 0 && trainingAgeMonths <= ageYears * 12;
     }
 
     void recalculateDerived(Gender gender, TrainingFrequency frequency, ExperienceLevel level) noexcept;
@@ -196,8 +196,6 @@ public:
         std::chrono::system_clock::time_point updatedAt
     );
 
-    UserProfile() = default;
-
     // Getters
     [[nodiscard]] int64_t                               getId() const noexcept { return id_; }
     [[nodiscard]] const std::string&                    getName() const noexcept { return name_; }
@@ -216,6 +214,7 @@ public:
     [[nodiscard]] double getEstimated1RM(ExerciseId exerciseId) const noexcept;
 
     // Value-semantics updates
+    // @throw std::invalid_argument if the new value would make the profile invalid.
     UserProfile withBodyWeight(double newWeightKg) const;
     UserProfile withBodyFatPct(double newBodyFatPct) const;
     UserProfile withTrainingAgeMonths(int months) const;
