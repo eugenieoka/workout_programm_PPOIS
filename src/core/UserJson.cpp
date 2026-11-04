@@ -1,5 +1,7 @@
 #include "core/User.h"
 
+#include "EquipmentNames.h"
+
 #include <array>
 #include <chrono>
 #include <cmath>
@@ -19,25 +21,6 @@ namespace workout::core {
 namespace {
 
 using json = nlohmann::json;
-
-struct NamedEquipment {
-    Equipment value;
-    const char* name;
-};
-
-constexpr std::array<NamedEquipment, 11> kEquipmentNames{{
-    {Equipment::Barbell, "Barbell"},
-    {Equipment::Dumbbells, "Dumbbells"},
-    {Equipment::PowerRack, "PowerRack"},
-    {Equipment::CableMachine, "CableMachine"},
-    {Equipment::Machines, "Machines"},
-    {Equipment::PullUpBar, "PullUpBar"},
-    {Equipment::DipStation, "DipStation"},
-    {Equipment::Bands, "Bands"},
-    {Equipment::Kettlebells, "Kettlebells"},
-    {Equipment::CardioMachines, "CardioMachines"},
-    {Equipment::Bench, "Bench"}
-}};
 
 struct NamedConstraint {
     HealthConstraint value;
@@ -126,16 +109,6 @@ TrainingFrequency frequencyFromString(std::string_view value) {
     throw std::runtime_error("Unknown TrainingFrequency value: " + std::string(value));
 }
 
-Equipment equipmentFromString(std::string_view value) {
-    if (value == "None") return Equipment::None;
-    for (const auto& entry : kEquipmentNames) {
-        if (value == entry.name) {
-            return entry.value;
-        }
-    }
-    throw std::runtime_error("Unknown Equipment value: " + std::string(value));
-}
-
 HealthConstraint constraintFromString(std::string_view value) {
     for (const auto& entry : kConstraintNames) {
         if (value == entry.name) {
@@ -143,16 +116,6 @@ HealthConstraint constraintFromString(std::string_view value) {
         }
     }
     throw std::runtime_error("Unknown HealthConstraint value: " + std::string(value));
-}
-
-std::vector<std::string> equipmentToStrings(Equipment mask) {
-    std::vector<std::string> result;
-    for (const auto& entry : kEquipmentNames) {
-        if (hasEquipment(mask, entry.value)) {
-            result.emplace_back(entry.name);
-        }
-    }
-    return result;
 }
 
 std::vector<std::string> constraintsToStrings(uint16_t mask) {
@@ -163,21 +126,6 @@ std::vector<std::string> constraintsToStrings(uint16_t mask) {
         }
     }
     return result;
-}
-
-Equipment equipmentFromJson(const json& value) {
-    if (!value.is_array()) {
-        throw std::runtime_error("Equipment must be an array of strings");
-    }
-
-    Equipment mask = Equipment::None;
-    for (const auto& item : value) {
-        if (!item.is_string()) {
-            throw std::runtime_error("Equipment must be an array of strings");
-        }
-        mask = mask | equipmentFromString(item.get<std::string>());
-    }
-    return mask;
 }
 
 uint16_t constraintsFromJson(const json& value) {
@@ -281,7 +229,7 @@ std::string UserProfile::toJson() const {
     };
 
     root["Constraints"] = constraintsToStrings(constraints_.constraintsMask);
-    root["Equipment"] = equipmentToStrings(constraints_.availableEquipment);
+    root["Equipment"] = detail::equipmentToStrings(constraints_.availableEquipment);
 
     root["Preferences"] = {
         {"AvoidAxialLoading", constraints_.userAvoidAxialLoading},
@@ -346,7 +294,7 @@ UserProfile UserProfile::fromJson(const std::string& text) {
             constraints.constraintsMask = constraintsFromJson(root["Constraints"]);
         }
         if (root.contains("Equipment") && !root["Equipment"].is_null()) {
-            constraints.availableEquipment = equipmentFromJson(root["Equipment"]);
+            constraints.availableEquipment = detail::equipmentFromJson(root["Equipment"]);
         }
         if (root.contains("Preferences") && !root["Preferences"].is_null()) {
             const json& prefs = root["Preferences"];

@@ -22,6 +22,7 @@ add_library(workout_core STATIC
     src/core/User.cpp
     src/core/Exercise.cpp
     src/core/UserJson.cpp
+    src/core/ExerciseJson.cpp
 )
 
 target_include_directories(workout_core

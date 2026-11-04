@@ -145,8 +145,6 @@ public:
 
     static Exercise createFromDb(const ExerciseData& data);
 
-    Exercise() = default;
-
     // Getters
     [[nodiscard]] ExerciseId                      getId() const noexcept { return id_; }
     [[nodiscard]] const std::string&              getName() const noexcept { return name_; }
