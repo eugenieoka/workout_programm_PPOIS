@@ -1,28 +1,28 @@
-# Слой базы данных
+# Database layer
 
-Документ описывает схему SQLite, соответствие доменной модели и контракты репозиториев.
+This document describes the SQLite schema, how it maps to the domain model, and the repository contracts.
 
-## Файлы
+## Files
 
-| Файл | Назначение |
+| File | Purpose |
 |---|---|
-| `data/schema.sql` | DDL: таблицы, ограничения, индексы, `PRAGMA user_version` |
-| `data/seed.sql` | Базовый каталог из 27 упражнений и вторичных мышечных групп |
-| `include/db/Database.h` | Соединение, `Statement` (RAII), транзакции |
-| `include/db/UserRepository.h` | Профили пользователей и оценки 1RM |
-| `include/db/ExerciseRepository.h` | Справочник упражнений |
-| `include/db/PlanRepository.h` | Планы, дни и упражнения плана (DTO) |
+| `data/schema.sql` | DDL: tables, constraints, indexes, `PRAGMA user_version` |
+| `data/seed.sql` | Base catalog of 27 exercises and secondary muscle groups |
+| `include/db/Database.h` | Connection, `Statement` (RAII), transactions |
+| `include/db/UserRepository.h` | User profiles and 1RM estimates |
+| `include/db/ExerciseRepository.h` | Exercise catalog |
+| `include/db/PlanRepository.h` | Plans, plan days and plan exercises (DTO) |
 | `include/db/SqlTime.h` | ISO 8601 UTC ↔ `time_point` |
-| `tests/DatabaseTest.cpp` | Round-trip тесты репозиториев |
+| `tests/DatabaseTest.cpp` | Repository round-trip tests |
 
-## Применение схемы
+## Applying the schema
 
 ```bash
 sqlite3 workout.db < data/schema.sql
 sqlite3 workout.db < data/seed.sql
 ```
 
-Из C++:
+From C++:
 
 ```cpp
 workout::infra::Database db("workout.db");
@@ -30,9 +30,9 @@ db.executeFile("data/schema.sql");
 db.executeFile("data/seed.sql");
 ```
 
-`Database` включает `PRAGMA foreign_keys = ON` и `busy_timeout` (5 секунд).
+`Database` enables `PRAGMA foreign_keys = ON` and sets `busy_timeout` (5 seconds).
 
-## ER-диаграмма
+## ER diagram
 
 ```mermaid
 erDiagram
@@ -45,106 +45,108 @@ erDiagram
     EXERCISES     ||--o{ PLAN_EXERCISES : used_in
 ```
 
-## Таблицы
+## Tables
 
 ### `exercises`
 
-Справочник упражнений. Соответствует `workout::core::Exercise` / `ExerciseData`.
+Exercise catalog. Maps to `workout::core::Exercise` / `ExerciseData`.
 
-| Колонка | Тип | Смысл |
+| Column | Type | Meaning |
 |---|---|---|
-| `id` | INTEGER PK | Явный положительный id (без AUTOINCREMENT) |
-| `name` | TEXT UNIQUE | Название |
-| `description` | TEXT | Описание |
+| `id` | INTEGER PK | Explicit positive id (no AUTOINCREMENT) |
+| `name` | TEXT UNIQUE | Name |
+| `description` | TEXT | Description |
 | `primary_muscle` | INTEGER | `MuscleGroup` |
 | `structure` | INTEGER | `ExerciseStructure` |
 | `kind` | INTEGER | `ExerciseKind` |
 | `purpose_type` | INTEGER | `PurposeType` |
 | `movement_pattern` | INTEGER | `MovementPattern` |
-| `required_equipment` | INTEGER | Битовая маска `Equipment` |
-| `optional_equipment` | INTEGER | Битовая маска `Equipment` |
+| `required_equipment` | INTEGER | `Equipment` bitmask |
+| `optional_equipment` | INTEGER | `Equipment` bitmask |
 | `difficulty` | INTEGER | 1–5 |
 | `met` | REAL | MET, ≥ 0 |
-| `estimated_set_duration_sec` | INTEGER | Длительность подхода, > 0 |
-| `instructions` | TEXT | Техника |
-| `video_url` | TEXT | Ссылка |
+| `estimated_set_duration_sec` | INTEGER | Set duration, > 0 |
+| `instructions` | TEXT | Technique notes |
+| `video_url` | TEXT | Link |
 | `is_powerlifting_lift` | INTEGER | 0/1 |
 | `axial_loading` | INTEGER | 0/1 |
 | `spinal_flexion` | INTEGER | 0/1 |
 | `overhead_motion` | INTEGER | 0/1 |
 | `deep_knee_flexion` | INTEGER | 0/1 |
 | `is_unilateral` | INTEGER | 0/1 |
-| `regression_id` | INTEGER FK | Более простое упражнение |
-| `progression_id` | INTEGER FK | Более сложное упражнение |
+| `regression_id` | INTEGER FK | Easier variation |
+| `progression_id` | INTEGER FK | Harder variation |
 
 ### `exercise_secondary_muscles`
 
-`(exercise_id, muscle_group)` — вторичные мышечные группы (`ExerciseData::secondaryMuscles`).
-Удаляются каскадно вместе с упражнением.
+`(exercise_id, muscle_group)` — secondary muscle groups (`ExerciseData::secondaryMuscles`).
+Rows are removed together with the exercise via cascade.
 
 ### `user_profiles`
 
-Соответствует `workout::core::UserProfile` и `BodyMetrics` / `UserConstraints`.
+Maps to `workout::core::UserProfile` and `BodyMetrics` / `UserConstraints`.
 
-| Колонка | Смысл |
+| Column | Meaning |
 |---|---|
-| `id` | PK, AUTOINCREMENT, `-1` в модели = новый профиль |
-| `name` | Имя |
+| `id` | PK, AUTOINCREMENT; `-1` in the model means a new profile |
+| `name` | Name |
 | `gender` | `Gender`: 0 Male, 1 Female, 2 Other |
-| `height_cm`, `weight_kg` | Антропометрия |
-| `body_fat_pct` | `-1.0` = неизвестно |
-| `age_years`, `training_age_months` | Возраст и стаж |
-| `bmi`, `bmr_kcal`, `tdee_kcal`, `ffmi` | Производные метрики |
+| `height_cm`, `weight_kg` | Anthropometry |
+| `body_fat_pct` | `-1.0` = unknown |
+| `age_years`, `training_age_months` | Age and training experience |
+| `bmi`, `bmr_kcal`, `tdee_kcal`, `ffmi` | Derived metrics |
 | `experience_level` | 0 Novice, 1 Intermediate, 2 Advanced |
 | `training_goal` | 0 Strength, 1 Hypertrophy, 2 WeightLoss, 3 Maintenance |
-| `training_frequency` | 2–6 дней в неделю |
-| `constraints_mask` | Битовая маска `HealthConstraint` |
-| `custom_notes` | Свободный текст; пустая строка хранится как `NULL` |
-| `available_equipment` | Битовая маска `Equipment` |
-| `avoid_axial_loading` | Явная настройка пользователя |
-| `avoid_spinal_flexion` | Явная настройка |
-| `avoid_overhead_motion` | Явная настройка |
-| `avoid_deep_knee_flexion` | Явная настройка |
-| `prefer_unilateral` | Предпочтение |
-| `max_session_minutes` | `NULL` = без ограничения |
+| `training_frequency` | 2–6 days per week |
+| `constraints_mask` | `HealthConstraint` bitmask |
+| `custom_notes` | Free-form text; an empty string is stored as `NULL` |
+| `available_equipment` | `Equipment` bitmask |
+| `avoid_axial_loading` | Explicit user preference |
+| `avoid_spinal_flexion` | Explicit user preference |
+| `avoid_overhead_motion` | Explicit user preference |
+| `avoid_deep_knee_flexion` | Explicit user preference |
+| `prefer_unilateral` | User preference |
+| `max_session_minutes` | `NULL` = no limit |
 | `created_at`, `updated_at` | ISO 8601 UTC |
 
-Важно: `shouldAvoid*()` в `UserConstraints` — вычисляемые значения (учитывают `constraints_mask`).
-В БД хранятся только явные настройки `userAvoid*`, чтобы не терять информацию при повторном сохранении.
+Note: `shouldAvoid*()` on `UserConstraints` are computed values (they take `constraints_mask`
+into account). The database stores only the explicit `userAvoid*` preferences, so no information
+is lost when the profile is saved again.
 
 ### `user_estimated_1rm`
 
-`(profile_id, exercise_id) → weight_kg`. Оценки 1RM, привязаны к профилю и упражнению.
-Удаление профиля — каскадное; удаление упражнения, на которое есть 1RM, запрещено (`RESTRICT`).
+`(profile_id, exercise_id) → weight_kg`. 1RM estimates tied to a profile and an exercise.
+Deleting a profile cascades; deleting an exercise that has a 1RM entry is blocked (`RESTRICT`).
 
 ### `workout_plans`
 
-| Колонка | Смысл |
+| Column | Meaning |
 |---|---|
 | `id` | PK |
-| `user_id` | FK → `user_profiles`, каскадное удаление |
-| `name`, `notes` | Название и заметки |
+| `user_id` | FK → `user_profiles`, cascade delete |
+| `name`, `notes` | Name and notes |
 | `goal` | `TrainingGoal` |
 | `days_per_week` | 1–7 |
-| `is_active` | Активный план пользователя |
+| `is_active` | The user's active plan |
 | `created_at`, `updated_at` | ISO 8601 UTC |
 
-Частичный уникальный индекс `idx_workout_plans_one_active` гарантирует **не более одного активного плана** на пользователя.
+The partial unique index `idx_workout_plans_one_active` guarantees **at most one active plan**
+per user.
 
 ### `plan_days`
 
-`(plan_id, day_index)` уникально. `day_index` — номер дня, начиная с 0.
+`(plan_id, day_index)` is unique. `day_index` is a zero-based day number.
 
 ### `plan_exercises`
 
-`(plan_day_id, position)` уникально. `weight_kg` может быть `NULL` (вес не задан).
-`ON DELETE CASCADE` от `plan_days`; `ON DELETE RESTRICT` от `exercises`.
+`(plan_day_id, position)` is unique. `weight_kg` may be `NULL` (weight not set).
+`ON DELETE CASCADE` from `plan_days`; `ON DELETE RESTRICT` from `exercises`.
 
-## Кодирование enum и битовых масок
+## Encoding of enums and bitmasks
 
-### Equipment (`includes/core/Types.h`)
+### Equipment (`include/core/Types.h`)
 
-| Значение | Бит | Число |
+| Value | Bit | Number |
 |---|---|---|
 | Barbell | 1 << 0 | 1 |
 | Dumbbells | 1 << 1 | 2 |
@@ -158,7 +160,7 @@ erDiagram
 | CardioMachines | 1 << 9 | 512 |
 | Bench | 1 << 10 | 1024 |
 
-Упражнение доступно, если все биты `required_equipment` присутствуют в `available_equipment`.
+An exercise is available when all `required_equipment` bits are present in `available_equipment`.
 
 ### MuscleGroup (`include/core/Exercise.h`)
 
@@ -168,77 +170,78 @@ erDiagram
 `12` Arms_Biceps, `13` Arms_Triceps, `14` Arms_Forearms,
 `15` Core_Abs, `16` Core_Obliques, `17` Core_LowerBack.
 
-### Остальные enum
+### Other enums
 
 - `MovementPattern`: Squat 0, Hinge 1, Lunge 2, Push_Horizontal 3, Push_Vertical 4,
   Pull_Horizontal 5, Pull_Vertical 6, Carry 7, Rotation 8, Other 9.
 - `ExerciseStructure`: Compound 0, Isolation 1.
 - `ExerciseKind`: Resistance 0, Olympic 1, Cardio 2, Mobility 3.
 - `PurposeType`: Main 0, Accessory 1, Corrective 2, Conditioning 3, Warmup 4.
-- `HealthConstraint`: None 0 … Custom 9. В `constraints_mask` бит = `1 << значение`;
-  для `None` маска равна 0.
+- `HealthConstraint`: None 0 … Custom 9. In `constraints_mask` a bit is `1 << value`;
+  for `None` the mask is 0.
 
-## Контракты репозиториев
+## Repository contracts
 
 ### `UserRepository`
 
-| Метод | Поведение |
+| Method | Behavior |
 |---|---|
-| `save(profile)` | `id == -1` → INSERT, иначе UPDATE. 1RM заменяются целиком. Всё в транзакции |
-| `findById(id)` | Профиль + 1RM; `nullopt`, если не найден |
-| `findAll()` | Все профили по `id` |
-| `remove(id)` | `true`, если строка была удалена |
+| `save(profile)` | `id == -1` → INSERT, otherwise UPDATE. 1RM entries are replaced as a whole. Runs in a transaction |
+| `findById(id)` | Profile + 1RM; `nullopt` if not found |
+| `findAll()` | All profiles ordered by `id` |
+| `remove(id)` | `true` if the row was deleted |
 
-`findById()` не меняет `updatedAt`: 1RM передаются в `UserProfile::createFromDb` отдельной картой.
+`findById()` does not change `updatedAt`: 1RM values are passed to
+`UserProfile::createFromDb` as a separate map.
 
 ### `ExerciseRepository`
 
-| Метод | Поведение |
+| Method | Behavior |
 |---|---|
-| `findById(id)` / `findByName(name)` | `nullopt`, если не найдено |
-| `findAll()` | Все упражнения по `id` |
-| `findCompatible(constraints)` | Только `Exercise::isCompatibleWith(constraints)` |
-| `save(exercise)` | UPSERT по `id` (id > 0), вторичные мышцы заменяются |
-| `remove(id)` | `true`, если удалено; исключение при FK `RESTRICT` |
+| `findById(id)` / `findByName(name)` | `nullopt` if not found |
+| `findAll()` | All exercises ordered by `id` |
+| `findCompatible(constraints)` | Only exercises where `Exercise::isCompatibleWith(constraints)` holds |
+| `save(exercise)` | UPSERT by `id` (id > 0); secondary muscles are replaced |
+| `remove(id)` | `true` if deleted; throws on the `RESTRICT` foreign key |
 
 ### `PlanRepository`
 
-Работает с DTO (`PlanRecord`, `PlanDayRecord`, `PlanExerciseRecord`), чтобы не зависеть
-от `core::WorkoutPlan` до слияния `feature/plan-generator`.
+Works with DTOs (`PlanRecord`, `PlanDayRecord`, `PlanExerciseRecord`) so that it does not
+depend on `core::WorkoutPlan` before `feature/plan-generator` is merged.
 
-| Метод | Поведение |
+| Method | Behavior |
 |---|---|
-| `save(plan)` | INSERT при `id < 0`, иначе UPDATE. Дни и упражнения заменяются целиком, в транзакции |
-| `findById(id)` | План с днями и упражнениями |
-| `findByUser(userId)` | Планы пользователя по `id` |
-| `setActive(planId)` | Снимает активность с остальных планов пользователя |
-| `remove(planId)` | Каскадно удаляет дни и упражнения |
+| `save(plan)` | INSERT when `id < 0`, otherwise UPDATE. Days and exercises are replaced as a whole, in a transaction |
+| `findById(id)` | Plan with its days and exercises |
+| `findByUser(userId)` | The user's plans ordered by `id` |
+| `setActive(planId)` | Clears the active flag on the user's other plans |
+| `remove(planId)` | Deletes days and exercises via cascade |
 
-Порядок: `dayIndex < 0` → берётся порядок в векторе; `position < 0` → порядок в векторе.
-`sets` и `reps` должны быть > 0, `exerciseId` > 0.
+Ordering: `dayIndex < 0` → the position in the vector is used; `position < 0` → the position
+in the vector is used. `sets` and `reps` must be > 0, `exerciseId` > 0.
 
-## Инварианты
+## Invariants
 
-1. Время хранится только в UTC в формате `YYYY-MM-DDTHH:MM:SSZ`.
-2. `body_fat_pct = -1.0` означает «неизвестно»; репозиторий также читает SQL `NULL` как `-1.0`.
-3. У пользователя не более одного активного плана.
-4. Удаление профиля каскадно удаляет его 1RM и планы.
-5. Упражнение нельзя удалить, пока оно используется в 1RM или плане.
-6. `exercises.id` задаётся явно и должен быть положительным при сохранении через репозиторий.
+1. Time is stored in UTC only, in the `YYYY-MM-DDTHH:MM:SSZ` format.
+2. `body_fat_pct = -1.0` means "unknown"; the repository also reads SQL `NULL` as `-1.0`.
+3. A user has at most one active plan.
+4. Deleting a profile cascades to its 1RM entries and plans.
+5. An exercise cannot be deleted while it is used in a 1RM entry or a plan.
+6. `exercises.id` is assigned explicitly and must be positive when saved through the repository.
 
-## Версионирование схемы
+## Schema versioning
 
-`PRAGMA user_version = 1;` фиксируется в `schema.sql`. Механизма применения миграций пока нет:
-при изменении схемы нужно либо пересоздать БД, либо добавить миграции и увеличить версию.
+`PRAGMA user_version = 1;` is set in `schema.sql`. There is no migration runner yet: when the
+schema changes, either recreate the database or add migrations and bump the version.
 
-## Тесты
+## Tests
 
-`tests/DatabaseTest.cpp` подключается к CTest и проверяет:
+`tests/DatabaseTest.cpp` is wired into CTest and verifies:
 
-- загрузку схемы и seed;
-- round-trip профиля, 1RM и `updatedAt`;
-- UPSERT и удаление упражнений;
-- сохранение/обновление плана, переключение активного плана, каскадное удаление;
-- соблюдение внешнего ключа для 1RM.
+- schema and seed loading;
+- profile, 1RM and `updatedAt` round-trip;
+- exercise UPSERT and removal;
+- plan save/update, switching the active plan, cascade delete;
+- the foreign key constraint for 1RM.
 
-Путь к данным передаётся через `WORKOUT_DATA_DIR`.
+The data path is passed through `WORKOUT_DATA_DIR`.
