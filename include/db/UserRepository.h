@@ -1,6 +1,7 @@
 #pragma once
 
 #include "Database.h"
+#include "SqlTime.h"
 #include "core/User.h"
 
 #include <chrono>
@@ -154,8 +155,8 @@ private:
             stmt.bindNull(23);
         }
 
-        stmt.bind(24, timePointToIso(p.getCreatedAt()));
-        stmt.bind(25, timePointToIso(p.getUpdatedAt()));
+        stmt.bind(24, sql::toIso(p.getCreatedAt()));
+        stmt.bind(25, sql::toIso(p.getUpdatedAt()));
     }
 
     core::UserProfile mapRowToProfile(const Statement& stmt) {
@@ -193,8 +194,8 @@ private:
             c.maxSessionMinutes = stmt.columnInt(23);
         }
 
-        const auto createdAt = isoToTimePoint(stmt.columnText(24));
-        const auto updatedAt = isoToTimePoint(stmt.columnText(25));
+        const auto createdAt = sql::fromIso(stmt.columnText(24));
+        const auto updatedAt = sql::fromIso(stmt.columnText(25));
 
         return core::UserProfile::createFromDb(id,
                                                name,
@@ -248,42 +249,6 @@ private:
         return result;
     }
 
-    // --- Время (ISO 8601 UTC) ---
-
-    static std::string timePointToIso(std::chrono::system_clock::time_point tp) {
-        const std::time_t time = std::chrono::system_clock::to_time_t(tp);
-
-        std::tm utc{};
-#if defined(_WIN32)
-        gmtime_s(&utc, &time);
-#else
-        gmtime_r(&time, &utc);
-#endif
-
-        char buffer[32];
-        std::strftime(buffer, sizeof(buffer), "%Y-%m-%dT%H:%M:%SZ", &utc);
-        return buffer;
-    }
-
-    static std::chrono::system_clock::time_point isoToTimePoint(const std::string& iso) {
-        std::tm utc{};
-        std::istringstream stream(iso);
-        stream >> std::get_time(&utc, "%Y-%m-%dT%H:%M:%SZ");
-        if (stream.fail()) {
-            throw std::runtime_error("Invalid ISO-8601 timestamp in database: " + iso);
-        }
-
-#if defined(_WIN32)
-        const std::time_t time = _mkgmtime(&utc);
-#else
-        const std::time_t time = timegm(&utc);
-#endif
-
-        if (time == static_cast<std::time_t>(-1)) {
-            throw std::runtime_error("Failed to convert timestamp: " + iso);
-        }
-        return std::chrono::system_clock::from_time_t(time);
-    }
-};
+    };
 
 } // namespace workout::infra
