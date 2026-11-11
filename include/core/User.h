@@ -181,6 +181,7 @@ public:
      * @param id Database primary key (must be >= 0)
      * @param createdAt Original creation timestamp
      * @param updatedAt Last update timestamp
+     * @param estimated1RM Persisted 1RM values (does not affect updatedAt)
      * @note Skips validation — trusts DB integrity.
      */
     static UserProfile createFromDb(
@@ -193,7 +194,8 @@ public:
         TrainingFrequency frequency,
         UserConstraints constraints,
         std::chrono::system_clock::time_point createdAt,
-        std::chrono::system_clock::time_point updatedAt
+        std::chrono::system_clock::time_point updatedAt,
+        const std::map<ExerciseId, double>& estimated1RM = {}
     );
 
     // Getters
@@ -243,6 +245,9 @@ public:
     /** @throw std::runtime_error on parse/validation error. */
     static UserProfile fromJson(const std::string& json);
 
+    // Database
+    [[nodiscard]] const std::map<ExerciseId, double>& getEstimated1RM() const noexcept { return estimated1RM_; }
+
 private:
     int64_t id_ = -1;
     std::string name_;
@@ -263,4 +268,4 @@ private:
                 std::chrono::system_clock::time_point updated);
 };
 
-} 
+} // namespace workout::core

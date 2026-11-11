@@ -13,3 +13,19 @@ target_link_libraries(workout_tests
 
 include(GoogleTest)
 gtest_discover_tests(workout_tests)
+
+add_executable(workout_db_tests
+    DatabaseTest.cpp
+)
+
+target_link_libraries(workout_db_tests
+    PRIVATE
+        workout_db
+        GTest::gtest_main
+)
+
+target_compile_definitions(workout_db_tests
+    PRIVATE WORKOUT_DATA_DIR="${CMAKE_SOURCE_DIR}/data"
+)
+
+gtest_discover_tests(workout_db_tests)
