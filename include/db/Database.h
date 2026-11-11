@@ -38,6 +38,9 @@ public:
 
     ~Database() {
         if (db_) {
+            if (inTransaction_) {
+                sqlite3_exec(db_, "ROLLBACK;", nullptr, nullptr, nullptr);
+            }
             sqlite3_close(db_);
         }
     }
@@ -81,12 +84,37 @@ public:
     [[nodiscard]] int changes() const noexcept { return sqlite3_changes(db_); }
 
     // Transactions
-    void beginTransaction() { execute("BEGIN TRANSACTION;"); }
-    void commit() { execute("COMMIT;"); }
-    void rollback() { execute("ROLLBACK;"); }
+    // SQLite has no nested transactions, so a second beginTransaction() is a
+    // programming error rather than something to emulate with savepoints.
+    void beginTransaction() {
+        if (inTransaction_) {
+            throw std::logic_error("Database: transaction already in progress");
+        }
+        execute("BEGIN TRANSACTION;");
+        inTransaction_ = true;
+    }
+
+    void commit() {
+        if (!inTransaction_) {
+            throw std::logic_error("Database: no transaction in progress");
+        }
+        execute("COMMIT;");
+        inTransaction_ = false;
+    }
+
+    void rollback() {
+        if (!inTransaction_) {
+            throw std::logic_error("Database: no transaction in progress");
+        }
+        execute("ROLLBACK;");
+        inTransaction_ = false;
+    }
+
+    [[nodiscard]] bool inTransaction() const noexcept { return inTransaction_; }
 
 private:
     sqlite3* db_ = nullptr;
+    bool inTransaction_ = false;
 };
 
 /**
