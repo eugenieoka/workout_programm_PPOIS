@@ -30,6 +30,12 @@ public:
     [[nodiscard]] bool isEmpty() const noexcept { return days_.empty(); }
     [[nodiscard]] std::size_t getDayCount() const noexcept { return days_.size(); }
 
+    /** @return JSON with PascalCase keys and Days array. */
+    [[nodiscard]] std::string toJson() const;
+
+    /** @throw std::runtime_error on parse/validation error. */
+    static WorkoutPlan fromJson(const std::string& json);
+
 private:
     std::vector<PlanDay> days_;
 };

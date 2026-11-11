@@ -37,6 +37,7 @@ add_library(workout_core STATIC
     src/core/UserJson.cpp
     src/core/ExerciseJson.cpp
     src/core/WorkoutPlan.cpp
+    src/core/WorkoutPlanJson.cpp
     src/core/PlanGenerator.cpp
 )
 
