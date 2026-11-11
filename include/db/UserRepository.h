@@ -46,14 +46,19 @@ public:
         if (!stmt.step()) {
             return std::nullopt;
         }
-        return mapRowToProfile(stmt);
+        return mapRowToProfile(stmt, loadEstimated1RMs(id));
     }
 
     std::vector<core::UserProfile> findAll() {
         Statement stmt(db_.getRawConnection(), selectSql() + " ORDER BY id;");
+        const auto oneRepMaxes = loadAllEstimated1RMs();
+        const std::map<core::ExerciseId, double> none;
+
         std::vector<core::UserProfile> result;
         while (stmt.step()) {
-            result.push_back(mapRowToProfile(stmt));
+            const auto id = stmt.columnInt64(0);
+            const auto it = oneRepMaxes.find(id);
+            result.push_back(mapRowToProfile(stmt, it == oneRepMaxes.end() ? none : it->second));
         }
         return result;
     }
@@ -159,7 +164,8 @@ private:
         stmt.bind(25, sql::toIso(p.getUpdatedAt()));
     }
 
-    core::UserProfile mapRowToProfile(const Statement& stmt) {
+    core::UserProfile mapRowToProfile(const Statement& stmt,
+                                     const std::map<core::ExerciseId, double>& estimated1RM) {
         const int64_t id = stmt.columnInt64(0);
         const std::string name = stmt.columnText(1);
         const auto gender = static_cast<core::Gender>(stmt.columnInt(2));
@@ -207,7 +213,7 @@ private:
                                                c,
                                                createdAt,
                                                updatedAt,
-                                               loadEstimated1RMs(id));
+                                               estimated1RM);
     }
 
     // --- 1RM ---
@@ -249,6 +255,18 @@ private:
         return result;
     }
 
-    };
+    // One query for every profile, so findAll() does not issue a query per row.
+    std::map<int64_t, std::map<core::ExerciseId, double>> loadAllEstimated1RMs() {
+        Statement stmt(db_.getRawConnection(),
+                       "SELECT profile_id, exercise_id, weight_kg FROM user_estimated_1rm "
+                       "ORDER BY profile_id, exercise_id;");
+
+        std::map<int64_t, std::map<core::ExerciseId, double>> result;
+        while (stmt.step()) {
+            result[stmt.columnInt64(0)][stmt.columnInt64(1)] = stmt.columnDouble(2);
+        }
+        return result;
+    }
+};
 
 } // namespace workout::infra
