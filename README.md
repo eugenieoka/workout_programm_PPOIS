@@ -1,11 +1,11 @@
 # C++ workout programm
 
-## Команда №5
-- Участник 1 - Ковалёв Герман (Itamit12) - работа с базой данных, докуметация
-- Участник 2 - Белюк Евгений (eugenieoka) - реализация логики, документация
-- Участник 3 - Красовский Илья (svechof) - тестирование, маркетинг, документация
+## Team #5
+- Member 1 - German Kovalev (Itamit12) - database work, documentation
+- Member 2 - Evgeny Belyuk (eugenieoka) - logic implementation, documentation
+- Member 3 - Ilya Krasovsky (svechof) - testing, marketing, documentation
 
-## Описание проекта
-iOS-приложение для автоматического подбора индивидуального
-тренировочного плана по параметрам пользователя: уровень подготовки,
-цель, доступное время, ограничения по здоровью и доступный инвентарь
+## Project description
+An iOS application that automatically builds an individual training plan
+from the user's parameters: experience level, goal, available time,
+health constraints and available equipment.
