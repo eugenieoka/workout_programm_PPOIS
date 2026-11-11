@@ -82,15 +82,15 @@ TEST_F(DatabaseTest, UserRoundTrip) {
     EXPECT_EQ(*loaded->getConstraints().maxSessionMinutes, 60);
     EXPECT_EQ(loaded->getConstraints().customNotes, "test notes");
 
-    // Чтение не меняет updatedAt.
+    // Reading does not change updatedAt.
     const auto updatedAt = loaded->getUpdatedAt();
     EXPECT_EQ(repo.findById(id)->getUpdatedAt(), updatedAt);
 
-    // UPDATE существующего профиля.
+    // UPDATE of an existing profile.
     repo.save(loaded->withBodyWeight(82.5));
     EXPECT_DOUBLE_EQ(repo.findById(id)->getBodyMetrics().weightKg, 82.5);
 
-    // 1RM: изменение и удаление.
+    // 1RM: update and removal.
     repo.save(repo.findById(id)->withEstimated1RM(1, 105.0).withEstimated1RM(3, 0.0));
     EXPECT_DOUBLE_EQ(repo.findById(id)->getEstimated1RM(1), 105.0);
     EXPECT_DOUBLE_EQ(repo.findById(id)->getEstimated1RM(3), 0.0);
@@ -119,7 +119,7 @@ TEST_F(DatabaseTest, ExerciseSaveUpdatesAndRemoves) {
     EXPECT_EQ(loaded->getSecondaryMuscles().size(), 2u);
     EXPECT_EQ(loaded->getRequiredEquipment(), core::Equipment::CableMachine);
 
-    // Повторный save -> UPDATE.
+    // A second save -> UPDATE.
     const auto updated = core::Exercise::create(
         100, "Test Cable Fly 2", loaded->getDescription(), loaded->getPrimaryMuscle(),
         loaded->getSecondaryMuscles(), loaded->getStructure(), loaded->getKind(),
@@ -181,7 +181,7 @@ TEST_F(DatabaseTest, PlanRoundTripAndCascade) {
     EXPECT_FALSE(loaded->days[0].exercises[1].weightKg.has_value());
     EXPECT_TRUE(loaded->isActive);
 
-    // UPDATE: замена дней.
+    // UPDATE: replacing days.
     auto changed = *loaded;
     changed.name = "Updated Plan";
     changed.days.clear();
@@ -190,7 +190,7 @@ TEST_F(DatabaseTest, PlanRoundTripAndCascade) {
     EXPECT_EQ(updated->name, "Updated Plan");
     EXPECT_TRUE(updated->days.empty());
 
-    // Один активный план на пользователя.
+    // One active plan per user.
     PlanRecord second = plan;
     second.id = -1;
     second.name = "Second Plan";
@@ -203,7 +203,7 @@ TEST_F(DatabaseTest, PlanRoundTripAndCascade) {
     EXPECT_EQ(repo.findByUser(userId).size(), 2u);
     EXPECT_TRUE(repo.remove(secondId));
 
-    // Удаление профиля каскадно удаляет его планы.
+    // Deleting a profile cascades to its plans.
     EXPECT_TRUE(UserRepository(*db).remove(userId));
     EXPECT_FALSE(repo.findById(planId).has_value());
 }
