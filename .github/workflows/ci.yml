@@ -15,17 +15,17 @@ jobs:
       uses: actions/checkout@v4
 
     - name: Install dependencies (SQLite3)
-      # Устанавливаем библиотеки, которые нужны для работы с БД
+      # Install the libraries required for database work
       run: |
         sudo apt-get update
         sudo apt-get install -y libsqlite3-dev
 
     - name: Configure CMake
-      # Создаем папку build и генерируем файлы сборки
+      # Create the build directory and generate build files
       run: cmake -B ${{github.workspace}}/build -DCMAKE_BUILD_TYPE=Release
 
     - name: Build
-      # Собираем проект
+      # Build the project
       run: cmake --build ${{github.workspace}}/build --config Release
 
     - name: Run Tests
