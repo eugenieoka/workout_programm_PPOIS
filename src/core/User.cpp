@@ -277,21 +277,24 @@ UserProfile UserProfile::createFromDb(int64_t id,
                                       TrainingFrequency frequency,
                                       UserConstraints constraints,
                                       std::chrono::system_clock::time_point createdAt,
-                                      std::chrono::system_clock::time_point updatedAt) {
+                                      std::chrono::system_clock::time_point updatedAt,
+                                      const std::map<ExerciseId, double>& estimated1RM) {
     if (id < 0) {
         throw std::invalid_argument("UserProfile::createFromDb: id must be non-negative");
     }
 
-    return UserProfile(id,
-                       std::move(name),
-                       gender,
-                       std::move(metrics),
-                       level,
-                       goal,
-                       frequency,
-                       std::move(constraints),
-                       createdAt,
-                       updatedAt);
+    UserProfile profile(id,
+                        std::move(name),
+                        gender,
+                        std::move(metrics),
+                        level,
+                        goal,
+                        frequency,
+                        std::move(constraints),
+                        createdAt,
+                        updatedAt);
+    profile.estimated1RM_ = estimated1RM;
+    return profile;
 }
 
 UserProfile::UserProfile(int64_t id,

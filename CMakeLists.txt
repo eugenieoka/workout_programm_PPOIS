@@ -31,6 +31,8 @@ FetchContent_MakeAvailable(googletest)
 
 enable_testing()
 
+find_package(SQLite3 REQUIRED)
+
 add_library(workout_core STATIC
     src/core/User.cpp
     src/core/Exercise.cpp
@@ -44,6 +46,23 @@ target_include_directories(workout_core
 
 target_link_libraries(workout_core
     PRIVATE nlohmann_json::nlohmann_json
+)
+
+add_library(workout_db STATIC
+    src/db/Database.cpp
+    src/db/UserRepository.cpp
+    src/db/ExerciseRepository.cpp
+    src/db/PlanRepository.cpp
+)
+
+target_include_directories(workout_db
+    PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/include
+)
+
+target_link_libraries(workout_db
+    PUBLIC
+        SQLite::SQLite3
+        workout_core
 )
 
 add_subdirectory(tests)
