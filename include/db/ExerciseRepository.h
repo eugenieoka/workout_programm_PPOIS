@@ -50,12 +50,31 @@ public:
     }
 
     // Exercises compatible with the user's constraints (for PlanGenerator).
+    // Filtering happens in SQL so the full catalog is never materialized.
     std::vector<core::Exercise> findCompatible(const core::UserConstraints& constraints) {
+        Statement stmt(db_.getRawConnection(), selectSql() + R"(
+            WHERE (required_equipment & ?1) = required_equipment
+              AND (?2 = 0 OR axial_loading = 0)
+              AND (?3 = 0 OR spinal_flexion = 0)
+              AND (?4 = 0 OR overhead_motion = 0)
+              AND (?5 = 0 OR deep_knee_flexion = 0)
+            ORDER BY id;
+        )");
+
+        stmt.bind(1, static_cast<int>(static_cast<uint16_t>(constraints.availableEquipment)));
+        stmt.bind(2, constraints.shouldAvoidAxialLoading() ? 1 : 0);
+        stmt.bind(3, constraints.shouldAvoidSpinalFlexion() ? 1 : 0);
+        stmt.bind(4, constraints.shouldAvoidOverheadMotion() ? 1 : 0);
+        stmt.bind(5, constraints.shouldAvoidDeepKneeFlexion() ? 1 : 0);
+
+        const auto secondary = loadAllSecondaryMuscles();
+        const std::vector<core::MuscleGroup> none;
+
         std::vector<core::Exercise> result;
-        for (auto& exercise : findAll()) {
-            if (exercise.isCompatibleWith(constraints)) {
-                result.push_back(std::move(exercise));
-            }
+        while (stmt.step()) {
+            const auto id = stmt.columnInt64(0);
+            const auto it = secondary.find(id);
+            result.push_back(mapRowToExercise(stmt, it == secondary.end() ? none : it->second));
         }
         return result;
     }
