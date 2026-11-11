@@ -4,10 +4,12 @@
 #include "db/PlanRepository.h"
 #include "db/UserRepository.h"
 
+#include <algorithm>
 #include <cmath>
 #include <memory>
 #include <stdexcept>
 #include <string>
+#include <vector>
 
 #ifndef WORKOUT_DATA_DIR
 #define WORKOUT_DATA_DIR "."
@@ -218,6 +220,82 @@ TEST_F(DatabaseTest, RejectsUnknownExerciseForOneRepMax) {
     const auto withUnknown = profile->withEstimated1RM(9999, 50.0);
 
     EXPECT_THROW(UserRepository(*db).save(withUnknown), std::runtime_error);
+}
+
+TEST_F(DatabaseTest, TransactionGuardRejectsNestedCalls) {
+    EXPECT_FALSE(db->inTransaction());
+
+    db->beginTransaction();
+    EXPECT_TRUE(db->inTransaction());
+    EXPECT_THROW(db->beginTransaction(), std::logic_error);
+
+    db->rollback();
+    EXPECT_FALSE(db->inTransaction());
+    EXPECT_THROW(db->commit(), std::logic_error);
+    EXPECT_THROW(db->rollback(), std::logic_error);
+}
+
+TEST_F(DatabaseTest, FindAllLoadsOneRepMaxesForEveryProfile) {
+    const int64_t firstId = createUser();
+    ASSERT_GT(firstId, 0);
+
+    core::UserConstraints constraints;
+    const auto second = core::UserProfile::create(
+        "Second User", 40, core::Gender::Female, 165.0, 60.0,
+        core::ExperienceLevel::Novice, core::TrainingGoal::Hypertrophy,
+        core::TrainingFrequency::Days2, constraints, -1.0, 6);
+    ASSERT_TRUE(second.has_value());
+    const int64_t secondId = UserRepository(*db).save(second->withEstimated1RM(2, 55.0));
+    ASSERT_GT(secondId, 0);
+
+    const auto all = UserRepository(*db).findAll();
+    ASSERT_EQ(all.size(), 2u);
+
+    EXPECT_EQ(all[0].getId(), firstId);
+    EXPECT_DOUBLE_EQ(all[0].getEstimated1RM(1), 100.0);
+    EXPECT_DOUBLE_EQ(all[0].getEstimated1RM(3), 80.0);
+    EXPECT_DOUBLE_EQ(all[0].getEstimated1RM(2), 0.0);
+
+    EXPECT_EQ(all[1].getId(), secondId);
+    EXPECT_DOUBLE_EQ(all[1].getEstimated1RM(2), 55.0);
+    EXPECT_DOUBLE_EQ(all[1].getEstimated1RM(1), 0.0);
+}
+
+TEST_F(DatabaseTest, FindCompatibleFiltersInSql) {
+    ExerciseRepository repo(*db);
+
+    const auto names = [&repo](const core::UserConstraints& constraints) {
+        std::vector<std::string> result;
+        for (const auto& exercise : repo.findCompatible(constraints)) {
+            result.push_back(exercise.getName());
+        }
+        return result;
+    };
+
+    const auto contains = [](const std::vector<std::string>& values, const std::string& name) {
+        return std::find(values.begin(), values.end(), name) != values.end();
+    };
+
+    core::UserConstraints barbellOnly;
+    barbellOnly.availableEquipment = core::Equipment::Barbell;
+
+    const auto withBarbell = names(barbellOnly);
+    EXPECT_TRUE(contains(withBarbell, "Overhead Press"));
+    EXPECT_FALSE(contains(withBarbell, "Pull-up"));
+    EXPECT_FALSE(contains(withBarbell, "Bench Press"));
+
+    core::UserConstraints avoidingOverhead = barbellOnly;
+    avoidingOverhead.userAvoidOverheadMotion = true;
+    EXPECT_FALSE(contains(names(avoidingOverhead), "Overhead Press"));
+
+    core::UserConstraints kneePain = barbellOnly;
+    kneePain.addConstraint(core::HealthConstraint::KneePain);
+    EXPECT_FALSE(contains(names(kneePain), "Barbell Back Squat"));
+
+    core::UserConstraints bodyweightOnly;
+    const auto bodyweight = names(bodyweightOnly);
+    EXPECT_TRUE(contains(bodyweight, "Push-up"));
+    EXPECT_FALSE(contains(bodyweight, "Overhead Press"));
 }
 
 } // namespace
