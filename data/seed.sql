@@ -1,12 +1,12 @@
--- Базовый каталог упражнений.
--- Числовые значения соответствуют enum'ам из include/core/Exercise.h и Types.h.
+-- Base exercise catalog.
+-- Numeric values match the enums in include/core/Exercise.h and Types.h.
 INSERT OR IGNORE INTO exercises (
     id, name, primary_muscle, structure, kind, purpose_type, movement_pattern,
     required_equipment, optional_equipment, difficulty, met, estimated_set_duration_sec,
     is_powerlifting_lift, axial_loading, spinal_flexion, overhead_motion,
     deep_knee_flexion, is_unilateral, regression_id, progression_id
 ) VALUES
--- id, название, primary, struct, kind, purpose, pattern, reqEq, optEq, diff, met, setSec, PL, axial, spinal, overhead, knee, uni, reg, prog
+-- id, name, primary, struct, kind, purpose, pattern, reqEq, optEq, diff, met, setSec, PL, axial, spinal, overhead, knee, uni, reg, prog
 ( 1, 'Barbell Back Squat',      5, 0, 0, 0, 0,    5,    0, 4, 6.0,  90, 1, 1, 0, 0, 1, 0, NULL, NULL),
 ( 2, 'Overhead Press',         9, 0, 0, 0, 4,    1,    0, 4, 5.0,  75, 1, 0, 0, 1, 0, 0, NULL, NULL),
 ( 3, 'Bench Press',            0, 0, 0, 0, 3, 1025,    0, 3, 5.0,  75, 1, 0, 0, 0, 0, 0, NULL, NULL),
@@ -35,7 +35,7 @@ INSERT OR IGNORE INTO exercises (
 (26, 'Treadmill Run',          5, 0, 2, 3, 9,  512,    0, 2, 9.0,  60, 0, 0, 0, 0, 0, 0, NULL, NULL),
 (27, 'Rowing Machine',         2, 0, 2, 3, 5,  512,    0, 2, 8.0,  60, 0, 0, 0, 0, 0, 0, NULL, NULL);
 
--- Вторичные мышечные группы.
+-- Secondary muscle groups.
 INSERT OR IGNORE INTO exercise_secondary_muscles (exercise_id, muscle_group) VALUES
 ( 1,  6), ( 1,  7), ( 1, 17),
 ( 2, 13), ( 2, 10), ( 2, 15),
@@ -61,5 +61,5 @@ INSERT OR IGNORE INTO exercise_secondary_muscles (exercise_id, muscle_group) VAL
 (26,  6), (26,  8),
 (27, 12), (27,  4);
 
--- Цепочки замен, требующие ссылок вперёд, проставляем после вставки всех строк.
+-- Substitution chains that need forward references are set after all rows are inserted.
 UPDATE exercises SET progression_id = 7 WHERE id = 1;

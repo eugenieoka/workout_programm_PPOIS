@@ -1,15 +1,15 @@
 PRAGMA foreign_keys = ON;
 
--- Версия схемы для будущих миграций.
+-- Schema version for future migrations.
 PRAGMA user_version = 1;
 
--- 1. Справочник упражнений (для ExerciseRepository)
+-- 1. Exercise catalog (for ExerciseRepository)
 CREATE TABLE IF NOT EXISTS exercises (
     id INTEGER PRIMARY KEY,
     name TEXT NOT NULL UNIQUE,
     description TEXT NOT NULL DEFAULT '',
 
-    -- MuscleGroup (см. include/core/Exercise.h)
+    -- MuscleGroup (see include/core/Exercise.h)
     primary_muscle INTEGER NOT NULL DEFAULT 0,
 
     -- ExerciseStructure / ExerciseKind / PurposeType / MovementPattern
@@ -18,7 +18,7 @@ CREATE TABLE IF NOT EXISTS exercises (
     purpose_type INTEGER NOT NULL DEFAULT 0,
     movement_pattern INTEGER NOT NULL DEFAULT 9,
 
-    -- Equipment — битовая маска (см. include/core/Types.h)
+    -- Equipment bitmask (see include/core/Types.h)
     required_equipment INTEGER NOT NULL DEFAULT 0,
     optional_equipment INTEGER NOT NULL DEFAULT 0,
 
@@ -32,26 +32,26 @@ CREATE TABLE IF NOT EXISTS exercises (
 
     is_powerlifting_lift INTEGER NOT NULL DEFAULT 0 CHECK (is_powerlifting_lift IN (0, 1)),
 
-    -- Флаги ограничений здоровья (см. UserConstraints)
+    -- Health constraint flags (see UserConstraints)
     axial_loading INTEGER NOT NULL DEFAULT 0 CHECK (axial_loading IN (0, 1)),
     spinal_flexion INTEGER NOT NULL DEFAULT 0 CHECK (spinal_flexion IN (0, 1)),
     overhead_motion INTEGER NOT NULL DEFAULT 0 CHECK (overhead_motion IN (0, 1)),
     deep_knee_flexion INTEGER NOT NULL DEFAULT 0 CHECK (deep_knee_flexion IN (0, 1)),
     is_unilateral INTEGER NOT NULL DEFAULT 0 CHECK (is_unilateral IN (0, 1)),
 
-    -- Цепочка замен
+    -- Substitution chain
     regression_id INTEGER REFERENCES exercises(id) ON DELETE SET NULL,
     progression_id INTEGER REFERENCES exercises(id) ON DELETE SET NULL
 );
 
--- Вторичные мышечные группы (ExerciseData::secondaryMuscles)
+-- Secondary muscle groups (ExerciseData::secondaryMuscles)
 CREATE TABLE IF NOT EXISTS exercise_secondary_muscles (
     exercise_id INTEGER NOT NULL REFERENCES exercises(id) ON DELETE CASCADE,
     muscle_group INTEGER NOT NULL,
     PRIMARY KEY (exercise_id, muscle_group)
 );
 
--- 2. Профили пользователей (для UserRepository)
+-- 2. User profiles (for UserRepository)
 CREATE TABLE IF NOT EXISTS user_profiles (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     name TEXT NOT NULL,
@@ -92,7 +92,7 @@ CREATE TABLE IF NOT EXISTS user_profiles (
 
 CREATE INDEX IF NOT EXISTS idx_user_profiles_name ON user_profiles(name);
 
--- 3. Оценки 1RM (связь с профилем и упражнением)
+-- 3. 1RM estimates (linked to a profile and an exercise)
 CREATE TABLE IF NOT EXISTS user_estimated_1rm (
     profile_id INTEGER NOT NULL,
     exercise_id INTEGER NOT NULL,
@@ -102,7 +102,7 @@ CREATE TABLE IF NOT EXISTS user_estimated_1rm (
     FOREIGN KEY (exercise_id) REFERENCES exercises(id) ON DELETE RESTRICT
 );
 
--- 4. Планы тренировок
+-- 4. Workout plans
 CREATE TABLE IF NOT EXISTS workout_plans (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     user_id INTEGER NOT NULL,
@@ -118,11 +118,11 @@ CREATE TABLE IF NOT EXISTS workout_plans (
 
 CREATE INDEX IF NOT EXISTS idx_workout_plans_user ON workout_plans(user_id);
 
--- У пользователя не может быть больше одного активного плана.
+-- A user cannot have more than one active plan.
 CREATE UNIQUE INDEX IF NOT EXISTS idx_workout_plans_one_active
     ON workout_plans(user_id) WHERE is_active = 1;
 
--- 5. Дни плана
+-- 5. Plan days
 CREATE TABLE IF NOT EXISTS plan_days (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     plan_id INTEGER NOT NULL,
@@ -134,7 +134,7 @@ CREATE TABLE IF NOT EXISTS plan_days (
 
 CREATE INDEX IF NOT EXISTS idx_plan_days_plan ON plan_days(plan_id);
 
--- 6. Упражнения в дне плана
+-- 6. Exercises within a plan day
 CREATE TABLE IF NOT EXISTS plan_exercises (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     plan_day_id INTEGER NOT NULL,
