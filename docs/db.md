@@ -30,7 +30,9 @@ db.executeFile("data/schema.sql");
 db.executeFile("data/seed.sql");
 ```
 
-`Database` enables `PRAGMA foreign_keys = ON` and sets `busy_timeout` (5 seconds).
+`Database` enables `PRAGMA foreign_keys = ON` and sets `busy_timeout` (5 seconds). Transactions
+are tracked by the wrapper: a second `beginTransaction()` before `commit()`/`rollback()` throws
+`std::logic_error`, because SQLite has no nested transactions.
 
 ## ER diagram
 
@@ -188,7 +190,7 @@ An exercise is available when all `required_equipment` bits are present in `avai
 |---|---|
 | `save(profile)` | `id == -1` → INSERT, otherwise UPDATE. 1RM entries are replaced as a whole. Runs in a transaction |
 | `findById(id)` | Profile + 1RM; `nullopt` if not found |
-| `findAll()` | All profiles ordered by `id` |
+| `findAll()` | All profiles ordered by `id`; 1RM values are loaded in one extra query |
 | `remove(id)` | `true` if the row was deleted |
 
 `findById()` does not change `updatedAt`: 1RM values are passed to
@@ -200,7 +202,7 @@ An exercise is available when all `required_equipment` bits are present in `avai
 |---|---|
 | `findById(id)` / `findByName(name)` | `nullopt` if not found |
 | `findAll()` | All exercises ordered by `id` |
-| `findCompatible(constraints)` | Only exercises where `Exercise::isCompatibleWith(constraints)` holds |
+| `findCompatible(constraints)` | Exercises compatible with the constraints; filtering runs in SQL, not in memory |
 | `save(exercise)` | UPSERT by `id` (id > 0); secondary muscles are replaced |
 | `remove(id)` | `true` if deleted; throws on the `RESTRICT` foreign key |
 
