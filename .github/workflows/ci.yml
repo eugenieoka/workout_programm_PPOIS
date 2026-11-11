@@ -29,4 +29,5 @@ jobs:
       run: cmake --build ${{github.workspace}}/build --config Release
 
     - name: Run Tests
-      run: echo "Сборка прошла успешно. Тесты пока не настроены."
+      working-directory: ${{github.workspace}}/build
+      run: ctest --output-on-failure -C Release
