@@ -9,7 +9,7 @@
 
 namespace workout::infra::sql {
 
-// ISO 8601 UTC, например "2026-03-20T14:22:00Z".
+// ISO 8601 UTC, for example "2026-03-20T14:22:00Z".
 inline std::string toIso(std::chrono::system_clock::time_point tp) {
     const std::time_t time = std::chrono::system_clock::to_time_t(tp);
 

@@ -32,7 +32,7 @@ public:
             throw;
         }
 
-        // Не падать сразу на SQLITE_BUSY при конкурентном доступе.
+        // Do not fail immediately with SQLITE_BUSY under concurrent access.
         sqlite3_busy_timeout(db_, 5000);
     }
 
@@ -45,7 +45,7 @@ public:
     Database(const Database&) = delete;
     Database& operator=(const Database&) = delete;
 
-    // Выполнить SQL-скрипт (для schema.sql и seed.sql)
+    // Run a SQL script (used for schema.sql and seed.sql)
     void executeScript(const std::string& sqlContent) {
         char* errMsg = nullptr;
         if (sqlite3_exec(db_, sqlContent.c_str(), nullptr, nullptr, &errMsg) != SQLITE_OK) {
@@ -55,7 +55,7 @@ public:
         }
     }
 
-    // Выполнить SQL-скрипт из файла
+    // Run a SQL script from a file
     void executeFile(const std::string& path) {
         std::ifstream file(path, std::ios::binary);
         if (!file) {
@@ -67,7 +67,7 @@ public:
         executeScript(buffer.str());
     }
 
-    // Выполнить одиночный запрос без возврата данных
+    // Run a single statement that returns no rows
     void execute(const std::string& sql) {
         executeScript(sql);
     }
@@ -80,7 +80,7 @@ public:
 
     [[nodiscard]] int changes() const noexcept { return sqlite3_changes(db_); }
 
-    // Транзакции
+    // Transactions
     void beginTransaction() { execute("BEGIN TRANSACTION;"); }
     void commit() { execute("COMMIT;"); }
     void rollback() { execute("ROLLBACK;"); }
@@ -90,10 +90,10 @@ private:
 };
 
 /**
- * @brief RAII-обёртка над sqlite3_stmt.
+ * @brief RAII wrapper around sqlite3_stmt.
  *
- * Гарантирует sqlite3_finalize при выходе из области видимости и превращает
- * коды ошибок SQLite в исключения.
+ * Guarantees sqlite3_finalize on scope exit and turns SQLite error codes
+ * into exceptions.
  */
 class Statement {
 public:
@@ -149,7 +149,7 @@ public:
         check(sqlite3_bind_null(stmt_, index));
     }
 
-    /** @return true, если получена строка (SQLITE_ROW); false по завершении (SQLITE_DONE). */
+    /** @return true when a row is available (SQLITE_ROW); false when done (SQLITE_DONE). */
     bool step() {
         const int rc = sqlite3_step(stmt_);
         if (rc == SQLITE_ROW) {
@@ -161,7 +161,7 @@ public:
         throw std::runtime_error("SQL step failed: " + error());
     }
 
-    /** Выполнить запрос, который не должен возвращать строки. */
+    /** Run a statement that must not return rows. */
     void exec() {
         if (step()) {
             throw std::runtime_error("SQL statement unexpectedly returned rows");

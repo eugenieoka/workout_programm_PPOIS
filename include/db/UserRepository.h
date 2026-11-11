@@ -22,7 +22,7 @@ class UserRepository {
 public:
     explicit UserRepository(Database& db) : db_(db) {}
 
-    // Сохранить профиль: id == -1 -> INSERT, иначе UPDATE.
+    // Save a profile: id == -1 -> INSERT, otherwise UPDATE.
     int64_t save(const core::UserProfile& profile) {
         db_.beginTransaction();
         try {
@@ -34,7 +34,7 @@ public:
             try {
                 db_.rollback();
             } catch (...) {
-                // Сохраняем исходное исключение.
+                // Preserve the original exception.
             }
             throw;
         }
@@ -58,7 +58,7 @@ public:
         return result;
     }
 
-    // @return true, если профиль существовал и был удалён.
+    // @return true if the profile existed and was deleted.
     bool remove(int64_t id) {
         Statement stmt(db_.getRawConnection(), "DELETE FROM user_profiles WHERE id = ?;");
         stmt.bind(1, id);

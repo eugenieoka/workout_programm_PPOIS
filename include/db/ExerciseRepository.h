@@ -49,7 +49,7 @@ public:
         return result;
     }
 
-    // Упражнения, совместимые с ограничениями пользователя (для PlanGenerator).
+    // Exercises compatible with the user's constraints (for PlanGenerator).
     std::vector<core::Exercise> findCompatible(const core::UserConstraints& constraints) {
         std::vector<core::Exercise> result;
         for (auto& exercise : findAll()) {
@@ -60,7 +60,7 @@ public:
         return result;
     }
 
-    // INSERT или UPDATE по id. id должен быть положительным.
+    // INSERT or UPDATE by id. The id must be positive.
     core::ExerciseId save(const core::Exercise& exercise) {
         const core::ExerciseId id = exercise.getId();
         if (id <= 0) {
@@ -113,14 +113,14 @@ public:
             try {
                 db_.rollback();
             } catch (...) {
-                // Сохраняем исходное исключение.
+                // Preserve the original exception.
             }
             throw;
         }
     }
 
-    // @return true, если упражнение существовало и было удалено.
-    // @throw std::runtime_error, если упражнение используется в плане или 1RM.
+    // @return true if the exercise existed and was deleted.
+    // @throw std::runtime_error if the exercise is used in a plan or a 1RM entry.
     bool remove(core::ExerciseId id) {
         Statement stmt(db_.getRawConnection(), "DELETE FROM exercises WHERE id = ?;");
         stmt.bind(1, id);

@@ -14,14 +14,14 @@
 
 namespace workout::infra {
 
-// DTO-слой БД. Маппинг в core::WorkoutPlan делает тот, кто реализует PlanGenerator,
-// чтобы репозиторий не зависел от ещё не влитой ветки feature/plan-generator.
+// Database DTO layer. Mapping to core::WorkoutPlan is done by whoever implements
+// PlanGenerator, so the repository does not depend on the unmerged feature/plan-generator branch.
 
 struct PlanExerciseRecord {
     int64_t id = -1;
     int64_t planDayId = -1;
     core::ExerciseId exerciseId = -1;
-    int position = -1;              // < 0 -> порядок в векторе
+    int position = -1;              // < 0 -> position in the vector
     int sets = 0;
     int reps = 0;
     int restSec = 60;
@@ -32,7 +32,7 @@ struct PlanExerciseRecord {
 struct PlanDayRecord {
     int64_t id = -1;
     int64_t planId = -1;
-    int dayIndex = -1;              // < 0 -> порядок в векторе
+    int dayIndex = -1;              // < 0 -> position in the vector
     std::string name;
     std::vector<PlanExerciseRecord> exercises;
 };
@@ -42,7 +42,7 @@ struct PlanRecord {
     int64_t userId = -1;
     std::string name;
     core::TrainingGoal goal = core::TrainingGoal::Strength;
-    int daysPerWeek = 0;            // 0 -> взять days.size()
+    int daysPerWeek = 0;            // 0 -> use days.size()
     bool isActive = false;
     std::string notes;
     std::string createdAt;
@@ -55,10 +55,10 @@ public:
     explicit PlanRepository(Database& db) : db_(db) {}
 
     /**
-     * @brief INSERT (id < 0) или UPDATE плана вместе с днями и упражнениями.
+     * @brief INSERT (id < 0) or UPDATE a plan together with its days and exercises.
      *
-     * Дни и упражнения заменяются целиком; порядок берётся из position/dayIndex,
-     * а при отрицательном значении — из порядка в векторе.
+     * Days and exercises are replaced as a whole; ordering comes from
+     * position/dayIndex, or from the vector order when the value is negative.
      */
     int64_t save(const PlanRecord& plan) {
         if (plan.userId <= 0) {
@@ -129,7 +129,7 @@ public:
             try {
                 db_.rollback();
             } catch (...) {
-                // Сохраняем исходное исключение.
+                // Preserve the original exception.
             }
             throw;
         }
@@ -166,7 +166,7 @@ public:
         return result;
     }
 
-    // Сделать план активным, сняв активность с остальных планов пользователя.
+    // Make the plan active, clearing the flag on the user's other plans.
     bool setActive(int64_t planId) {
         int64_t userId = -1;
         {
