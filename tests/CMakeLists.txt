@@ -3,6 +3,9 @@ add_executable(workout_tests
     ExerciseTest.cpp
     UserJsonTest.cpp
     ExerciseJsonTest.cpp
+    WorkoutPlanTest.cpp
+    WorkoutPlanJsonTest.cpp
+    PlanGeneratorTest.cpp
 )
 
 target_link_libraries(workout_tests
