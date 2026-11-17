@@ -1,6 +1,7 @@
 cmake_minimum_required(VERSION 3.16)
 project(workout_programm LANGUAGES CXX)
 
+set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
@@ -67,5 +68,33 @@ target_link_libraries(workout_db
         SQLite::SQLite3
         workout_core
 )
+
+add_library(workout_service STATIC
+    src/app/ExerciseFilter.cpp
+    src/app/PlanMapper.cpp
+    src/app/WorkoutService.cpp
+    src/app/AppOptions.cpp
+    src/app/DatabaseInitializer.cpp
+)
+
+target_include_directories(workout_service
+    PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/include
+)
+
+target_link_libraries(workout_service
+    PUBLIC
+        workout_db
+        workout_core
+)
+
+target_compile_definitions(workout_service
+    PRIVATE WORKOUT_DATA_DIR="${CMAKE_CURRENT_SOURCE_DIR}/data"
+)
+
+if(MSVC)
+    target_compile_options(workout_service PRIVATE /W4 /utf-8)
+else()
+    target_compile_options(workout_service PRIVATE -Wall -Wextra)
+endif()
 
 add_subdirectory(tests)
