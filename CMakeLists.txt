@@ -36,6 +36,7 @@ find_package(SQLite3 REQUIRED)
 
 add_library(workout_core STATIC
     src/core/User.cpp
+    src/core/ValidationResult.cpp
     src/core/Exercise.cpp
     src/core/UserJson.cpp
     src/core/ExerciseJson.cpp

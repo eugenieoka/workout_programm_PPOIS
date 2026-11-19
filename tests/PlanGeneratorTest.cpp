@@ -179,7 +179,7 @@ TEST(PlanGenerator, UsesFrequencyForDayCount) {
 
         for (std::size_t index = 0; index < plan.getDayCount(); ++index) {
             const PlanDay& day = plan.getDays()[index];
-            EXPECT_EQ(day.dayIndex, static_cast<int>(index) + 1);
+            EXPECT_EQ(day.dayIndex, static_cast<int>(index));
             EXPECT_FALSE(day.name.empty());
             EXPECT_FALSE(day.exercises.empty());
         }

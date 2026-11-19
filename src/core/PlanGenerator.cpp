@@ -331,7 +331,7 @@ WorkoutPlan PlanGenerator::generate(const UserProfile& user,
 
     for (std::size_t index = 0; index < split.size(); ++index) {
         PlanDay day;
-        day.dayIndex = static_cast<int>(index) + 1;
+        day.dayIndex = static_cast<int>(index);
         day.name = split[index].name;
         day.exercises = buildDay(pool, targetsFor(split[index].type),
                                  maxSessionSeconds, user.getGoal(), constraints,

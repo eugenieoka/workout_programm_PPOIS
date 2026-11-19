@@ -5,6 +5,7 @@
 #include <vector>
 
 #include "Types.h"
+#include "ValidationResult.h"
 
 namespace workout::core {
 
@@ -30,7 +31,19 @@ public:
     [[nodiscard]] bool isEmpty() const noexcept { return days_.empty(); }
     [[nodiscard]] std::size_t getDayCount() const noexcept { return days_.size(); }
 
-    /** @return JSON with PascalCase keys and Days array. */
+    /**
+     * @brief Validate non-empty plan contents.
+     *
+     * An empty plan is valid. For non-empty plans, day indices must be
+     * non-negative and unique, day names must not be blank, and every exercise
+     * must have a positive id and in-range sets/reps/restSec.
+     */
+    [[nodiscard]] ValidationResult validate() const;
+
+    /**
+     * @return JSON with PascalCase keys and Days array.
+     * @throw std::invalid_argument if validate() fails.
+     */
     [[nodiscard]] std::string toJson() const;
 
     /** @throw std::runtime_error on parse/validation error. */
