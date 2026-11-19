@@ -32,3 +32,22 @@ target_compile_definitions(workout_db_tests
 )
 
 gtest_discover_tests(workout_db_tests)
+
+add_executable(workout_service_tests
+    WorkoutServiceTest.cpp
+    PlanMapperTest.cpp
+    DatabaseInitializerTest.cpp
+    AppOptionsTest.cpp
+)
+
+target_link_libraries(workout_service_tests
+    PRIVATE
+        workout_service
+        GTest::gtest_main
+)
+
+target_compile_definitions(workout_service_tests
+    PRIVATE WORKOUT_DATA_DIR="${CMAKE_SOURCE_DIR}/data"
+)
+
+gtest_discover_tests(workout_service_tests)
