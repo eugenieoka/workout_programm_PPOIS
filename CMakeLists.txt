@@ -98,4 +98,30 @@ else()
     target_compile_options(workout_service PRIVATE -Wall -Wextra)
 endif()
 
+add_library(workout_console STATIC
+    src/ui/ConsoleUI.cpp
+)
+
+target_include_directories(workout_console
+    PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/include
+)
+
+target_link_libraries(workout_console
+    PUBLIC workout_service
+)
+
+if(MSVC)
+    target_compile_options(workout_console PRIVATE /W4 /utf-8)
+else()
+    target_compile_options(workout_console PRIVATE -Wall -Wextra)
+endif()
+
+add_executable(workout_cli
+    src/main.cpp
+)
+
+target_link_libraries(workout_cli
+    PRIVATE workout_console
+)
+
 add_subdirectory(tests)

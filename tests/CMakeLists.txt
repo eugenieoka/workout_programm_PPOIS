@@ -51,3 +51,19 @@ target_compile_definitions(workout_service_tests
 )
 
 gtest_discover_tests(workout_service_tests)
+
+add_executable(workout_console_tests
+    ConsoleUITest.cpp
+)
+
+target_link_libraries(workout_console_tests
+    PRIVATE
+        workout_console
+        GTest::gtest_main
+)
+
+target_compile_definitions(workout_console_tests
+    PRIVATE WORKOUT_DATA_DIR="${CMAKE_SOURCE_DIR}/data"
+)
+
+gtest_discover_tests(workout_console_tests)
