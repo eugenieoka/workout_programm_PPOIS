@@ -12,8 +12,8 @@ using namespace workout::core;
 
 WorkoutPlan makePlan() {
     return WorkoutPlan{std::vector<PlanDay>{
-        {1, "Upper A", {{10, 4, 10, 135}, {20, 3, 12, 90}}},
-        {2, "Lower A", {{30, 4, 5, 270}}}
+        {0, "Upper A", {{10, 4, 10, 135}, {20, 3, 12, 90}}},
+        {1, "Lower A", {{30, 4, 5, 270}}}
     }};
 }
 
@@ -23,7 +23,7 @@ TEST(WorkoutPlanJson, SerializesAllFields) {
     const std::string text = makePlan().toJson();
 
     EXPECT_NE(text.find("\"Days\": ["), std::string::npos);
-    EXPECT_NE(text.find("\"DayIndex\": 1"), std::string::npos);
+    EXPECT_NE(text.find("\"DayIndex\": 0"), std::string::npos);
     EXPECT_NE(text.find("\"Name\": \"Upper A\""), std::string::npos);
     EXPECT_NE(text.find("\"ExerciseId\": 10"), std::string::npos);
     EXPECT_NE(text.find("\"Sets\": 4"), std::string::npos);
@@ -76,7 +76,7 @@ TEST(WorkoutPlanJson, RoundTripsEmptyPlan) {
 
 TEST(WorkoutPlanJson, AcceptsBoundaryValues) {
     const WorkoutPlan plan{std::vector<PlanDay>{
-        {1, "Boundary", {{1, 1, 1, 0}, {2, 20, 100, 3600}}}
+        {0, "Boundary", {{1, 1, 1, 0}, {2, 20, 100, 3600}}}
     }};
 
     const WorkoutPlan restored = WorkoutPlan::fromJson(plan.toJson());
@@ -99,7 +99,7 @@ TEST(WorkoutPlanJson, RejectsMalformedJson) {
 
 TEST(WorkoutPlanJson, RejectsInvalidDays) {
     EXPECT_THROW(WorkoutPlan::fromJson(
-                     R"({"Days":[{"DayIndex":0,"Name":"A","Exercises":[]}]})"),
+                     R"({"Days":[{"DayIndex":-1,"Name":"A","Exercises":[]}]})"),
                  std::runtime_error);
     EXPECT_THROW(WorkoutPlan::fromJson(
                      R"({"Days":[{"DayIndex":1,"Name":" ","Exercises":[]}]})"),

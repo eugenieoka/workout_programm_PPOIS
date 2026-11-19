@@ -5,7 +5,6 @@
 #include <cctype>
 #include <chrono>
 #include <cmath>
-#include <sstream>
 #include <stdexcept>
 #include <string>
 #include <string_view>
@@ -100,24 +99,6 @@ void validateOrThrow(const UserProfile& profile) {
 }
 
 } // namespace
-
-std::string ValidationResult::toString() const {
-    if (isValid) {
-        return {};
-    }
-
-    std::ostringstream out;
-    for (std::size_t i = 0; i < errors.size(); ++i) {
-        if (i != 0) {
-            out << '\n';
-        }
-        if (i < errorCodes.size()) {
-            out << errorCodes[i] << ": ";
-        }
-        out << errors[i];
-    }
-    return out.str();
-}
 
 void BodyMetrics::recalculateDerived(Gender gender,
                                     TrainingFrequency frequency,
@@ -335,6 +316,33 @@ UserProfile UserProfile::withBodyWeight(double newWeightKg) const {
 UserProfile UserProfile::withBodyFatPct(double newBodyFatPct) const {
     UserProfile updated = *this;
     updated.bodyMetrics_.bodyFatPct = newBodyFatPct;
+    validateOrThrow(updated);
+    updated.bodyMetrics_.recalculateDerived(updated.gender_, updated.frequency_, updated.level_);
+    updated.updatedAt_ = std::chrono::system_clock::now();
+    return updated;
+}
+
+UserProfile UserProfile::withHeightCm(double newHeightCm) const {
+    UserProfile updated = *this;
+    updated.bodyMetrics_.heightCm = newHeightCm;
+    validateOrThrow(updated);
+    updated.bodyMetrics_.recalculateDerived(updated.gender_, updated.frequency_, updated.level_);
+    updated.updatedAt_ = std::chrono::system_clock::now();
+    return updated;
+}
+
+UserProfile UserProfile::withAgeYears(int newAgeYears) const {
+    UserProfile updated = *this;
+    updated.bodyMetrics_.ageYears = newAgeYears;
+    validateOrThrow(updated);
+    updated.bodyMetrics_.recalculateDerived(updated.gender_, updated.frequency_, updated.level_);
+    updated.updatedAt_ = std::chrono::system_clock::now();
+    return updated;
+}
+
+UserProfile UserProfile::withGender(Gender newGender) const {
+    UserProfile updated = *this;
+    updated.gender_ = newGender;
     validateOrThrow(updated);
     updated.bodyMetrics_.recalculateDerived(updated.gender_, updated.frequency_, updated.level_);
     updated.updatedAt_ = std::chrono::system_clock::now();

@@ -14,8 +14,8 @@ namespace workout::app {
  * @brief Converts between the domain plan and the database DTO layer.
  *
  * The mapper always writes explicit zero-based dayIndex and position values.
- * PlanGenerator may still use one-based indices until the core dayIndex fix
- * lands; the vector order is authoritative here.
+ * PlanGenerator now produces zero-based indices; vector order remains
+ * authoritative for robustness against older persisted plans.
  */
 class PlanMapper {
 public:

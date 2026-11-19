@@ -8,24 +8,9 @@
 #include <cstdint>
 #include <map>
 #include "Types.h"
+#include "ValidationResult.h"
 
 namespace workout::core {
-
-/**
- * @brief Result of input validation — lists all errors, not just first.
- */
-struct ValidationResult {
-    bool isValid = true;
-    std::vector<std::string> errors;           // Human-readable messages
-    std::vector<std::string> errorCodes;       // Machine-readable codes: "INVALID_AGE", "WEIGHT_OUT_OF_RANGE"...
-
-    void addError(std::string_view code, std::string_view msg) {
-        isValid = false;
-        errorCodes.emplace_back(code);
-        errors.emplace_back(msg);
-    }
-    [[nodiscard]] std::string toString() const;
-};
 
 // Enums
 
@@ -219,6 +204,9 @@ public:
     // @throw std::invalid_argument if the new value would make the profile invalid.
     UserProfile withBodyWeight(double newWeightKg) const;
     UserProfile withBodyFatPct(double newBodyFatPct) const;
+    UserProfile withHeightCm(double newHeightCm) const;
+    UserProfile withAgeYears(int newAgeYears) const;
+    UserProfile withGender(Gender newGender) const;
     UserProfile withTrainingAgeMonths(int months) const;
     UserProfile withLevel(ExperienceLevel newLevel) const;
     UserProfile withGoal(TrainingGoal newGoal) const;

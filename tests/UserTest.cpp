@@ -311,6 +311,53 @@ TEST(UserUpdates, WithBodyFatPctRecalculatesFfmi) {
     EXPECT_THROW(profile.withBodyFatPct(60.0), std::invalid_argument);
 }
 
+TEST(UserUpdates, WithHeightCmRecalculatesDerivedMetrics) {
+    const auto profile = makeProfile();
+    const auto updated = profile.withHeightCm(180.0);
+
+    EXPECT_DOUBLE_EQ(updated.getBodyMetrics().heightCm, 180.0);
+    EXPECT_NEAR(updated.getBodyMetrics().bmi, 65.0 / (1.8 * 1.8), 1e-9);
+    EXPECT_NEAR(updated.getBodyMetrics().bmrKcal,
+                10.0 * 65.0 + 6.25 * 180.0 - 5.0 * 30.0 - 161.0,
+                1e-9);
+
+    EXPECT_THROW(profile.withHeightCm(50.0), std::invalid_argument);
+    EXPECT_THROW(profile.withHeightCm(250.0), std::invalid_argument);
+    EXPECT_THROW(profile.withHeightCm(std::numeric_limits<double>::quiet_NaN()),
+                 std::invalid_argument);
+}
+
+TEST(UserUpdates, WithAgeYearsRecalculatesBmr) {
+    const auto profile = makeProfile();
+    const auto updated = profile.withAgeYears(31);
+
+    EXPECT_EQ(updated.getAge(), 31);
+    EXPECT_NEAR(updated.getBodyMetrics().bmrKcal,
+                10.0 * 65.0 + 6.25 * 170.0 - 5.0 * 31.0 - 161.0,
+                1e-9);
+    EXPECT_NEAR(updated.getBodyMetrics().tdeeKcal,
+                updated.getBodyMetrics().bmrKcal * 1.65,
+                1e-9);
+
+    EXPECT_THROW(profile.withAgeYears(12), std::invalid_argument);
+    EXPECT_THROW(profile.withAgeYears(101), std::invalid_argument);
+}
+
+TEST(UserUpdates, WithGenderRecalculatesBmr) {
+    const auto profile = makeProfile();
+    const auto updated = profile.withGender(Gender::Male);
+
+    EXPECT_EQ(updated.getGender(), Gender::Male);
+    EXPECT_NEAR(updated.getBodyMetrics().bmrKcal,
+                10.0 * 65.0 + 6.25 * 170.0 - 5.0 * 30.0 + 5.0,
+                1e-9);
+    EXPECT_NEAR(updated.getBodyMetrics().tdeeKcal,
+                updated.getBodyMetrics().bmrKcal * 1.65,
+                1e-9);
+
+    EXPECT_THROW(profile.withGender(static_cast<Gender>(9)), std::invalid_argument);
+}
+
 TEST(UserUpdates, WithTrainingAgeMonths) {
     const auto profile = makeProfile();
 

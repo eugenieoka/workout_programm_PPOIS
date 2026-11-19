@@ -1,12 +1,8 @@
 #include "core/WorkoutPlan.h"
 
-#include <algorithm>
-#include <cctype>
 #include <cstddef>
-#include <set>
 #include <stdexcept>
 #include <string>
-#include <string_view>
 #include <utility>
 #include <vector>
 
@@ -16,19 +12,6 @@ namespace workout::core {
 namespace {
 
 using json = nlohmann::json;
-
-constexpr int kMinSets = 1;
-constexpr int kMaxSets = 20;
-constexpr int kMinReps = 1;
-constexpr int kMaxReps = 100;
-constexpr int kMinRestSec = 0;
-constexpr int kMaxRestSec = 3600;
-
-bool isBlank(std::string_view text) noexcept {
-    return std::all_of(text.begin(), text.end(), [](unsigned char c) {
-        return std::isspace(c) != 0;
-    });
-}
 
 PlannedExercise plannedExerciseFromJson(const json& value) {
     if (!value.is_object()) {
@@ -40,20 +23,6 @@ PlannedExercise plannedExerciseFromJson(const json& value) {
     exercise.sets = value.at("Sets").get<int>();
     exercise.reps = value.at("Reps").get<int>();
     exercise.restSec = value.at("RestSec").get<int>();
-
-    if (exercise.exerciseId <= 0) {
-        throw std::runtime_error("ExerciseId must be positive");
-    }
-    if (exercise.sets < kMinSets || exercise.sets > kMaxSets) {
-        throw std::runtime_error("Sets must be between 1 and 20");
-    }
-    if (exercise.reps < kMinReps || exercise.reps > kMaxReps) {
-        throw std::runtime_error("Reps must be between 1 and 100");
-    }
-    if (exercise.restSec < kMinRestSec || exercise.restSec > kMaxRestSec) {
-        throw std::runtime_error("RestSec must be between 0 and 3600");
-    }
-
     return exercise;
 }
 
@@ -65,13 +34,6 @@ PlanDay planDayFromJson(const json& value) {
     PlanDay day;
     day.dayIndex = value.at("DayIndex").get<int>();
     day.name = value.at("Name").get<std::string>();
-
-    if (day.dayIndex < 1) {
-        throw std::runtime_error("DayIndex must be positive");
-    }
-    if (isBlank(day.name)) {
-        throw std::runtime_error("Name must not be empty or whitespace-only");
-    }
 
     const json& exercises = value.at("Exercises");
     if (!exercises.is_array()) {
@@ -89,6 +51,11 @@ PlanDay planDayFromJson(const json& value) {
 } // namespace
 
 std::string WorkoutPlan::toJson() const {
+    const ValidationResult validation = validate();
+    if (!validation.isValid) {
+        throw std::invalid_argument(validation.toString());
+    }
+
     json root;
     root["Days"] = json::array();
 
@@ -127,17 +94,16 @@ WorkoutPlan WorkoutPlan::fromJson(const std::string& text) {
 
         std::vector<PlanDay> days;
         days.reserve(daysJson.size());
-
-        std::set<int> dayIndexes;
         for (const auto& dayJson : daysJson) {
-            PlanDay day = planDayFromJson(dayJson);
-            if (!dayIndexes.insert(day.dayIndex).second) {
-                throw std::runtime_error("DayIndex values must be unique");
-            }
-            days.push_back(std::move(day));
+            days.push_back(planDayFromJson(dayJson));
         }
 
-        return WorkoutPlan{std::move(days)};
+        WorkoutPlan plan{std::move(days)};
+        const ValidationResult validation = plan.validate();
+        if (!validation.isValid) {
+            throw std::runtime_error(validation.toString());
+        }
+        return plan;
     } catch (const std::exception& error) {
         throw std::runtime_error(std::string("WorkoutPlan::fromJson: ") + error.what());
     }
